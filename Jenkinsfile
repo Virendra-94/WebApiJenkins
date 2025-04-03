@@ -3,7 +3,7 @@ pipeline {
     environment {
         AZURE_CREDENTIALS_ID = 'jenkins-pipeline-sp'
         RESOURCE_GROUP = 'rg-jenkins'
-        APP_SERVICE_NAME = 'ASP-rgjenkins-b066'
+        APP_SERVICE_NAME = 'azure-app-jenkins'
     }
 
     stages {
