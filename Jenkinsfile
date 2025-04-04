@@ -1,43 +1,46 @@
 pipeline {
     agent any
+
     environment {
-        AZURE_CREDENTIALS_ID = 'jenkins-azure-sp'
-        RESOURCE_GROUP = 'terraform-rg-dotnet'
-        APP_SERVICE_NAME = 'terraform-viren-98'
+        AZURE_SUBSCRIPTION_ID = credentials('AZURE_SUBSCRIPTION_ID')
+        AZURE_CLIENT_ID = credentials('AZURE_CLIENT_ID')
+        AZURE_CLIENT_SECRET = credentials('AZURE_CLIENT_SECRET')
+        AZURE_TENANT_ID = credentials('AZURE_TENANT_ID')
+        AZURE_STORAGE_KEY = credentials('AZURE_STORAGE_KEY')
     }
 
     stages {
         stage('Checkout Code') {
             steps {
-                git branch: 'master', url: 'https://github.com/Virendra-94/WebApiJenkins'
+                git 'https://github.com/Virendra-94/WebApiJenkins'
             }
         }
 
-        stage('Build') {
+        stage('Terraform Init') {
             steps {
-                bat 'dotnet restore'
-                bat 'dotnet build --configuration Release'
-                bat 'dotnet publish -c Release -o ./publish'
+                sh 'terraform init'
             }
         }
 
-        stage('Deploy') {
+        stage('Terraform Plan') {
             steps {
-                withCredentials([azureServicePrincipal(credentialsId: AZURE_CREDENTIALS_ID)]) {
-                    bat "az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID"
-                    bat "powershell Compress-Archive -Path ./publish/* -DestinationPath ./publish.zip -Force"
-                    bat "az webapp deploy --resource-group $RESOURCE_GROUP --name $APP_SERVICE_NAME --src-path ./publish.zip --type zip"
-                }
+                sh 'terraform plan -out=tfplan'
+            }
+        }
+
+        stage('Terraform Apply') {
+            steps {
+                sh 'terraform apply -auto-approve tfplan'
             }
         }
     }
 
     post {
         success {
-            echo 'Deployment Successful!'
+            echo "Terraform deployment successful!"
         }
         failure {
-            echo 'Deployment Failed!'
+            echo "Deployment failed!"
         }
     }
 }
