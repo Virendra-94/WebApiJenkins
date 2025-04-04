@@ -1,46 +1,44 @@
 pipeline {
     agent any
-
     environment {
-        AZURE_SUBSCRIPTION_ID = credentials('AZURE_SUBSCRIPTION_ID')
-        AZURE_CLIENT_ID = credentials('AZURE_CLIENT_ID')
-        AZURE_CLIENT_SECRET = credentials('AZURE_CLIENT_SECRET')
-        AZURE_TENANT_ID = credentials('AZURE_TENANT_ID')
-        AZURE_STORAGE_KEY = credentials('AZURE_STORAGE_KEY')
+        AZURE_CREDENTIALS_ID = 'jenkins-azure-sp'
+        RESOURCE_GROUP = 'terraform-rg-vir'
+        APP_SERVICE_NAME = 'terraform-viren-98'
     }
 
     stages {
         stage('Checkout Code') {
             steps {
-                git 'https://github.com/Virendra-94/WebApiJenkins'
+                git branch: 'master', url: 'https://github.com/Virendra-94/WebApiJenkins'
             }
         }
 
-        stage('Terraform Init') {
+        stage('Build') {
             steps {
-                sh 'terraform init'
+                bat 'dotnet restore'
+                bat 'dotnet build --configuration Release'
+                bat 'dotnet publish -c Release -o ./publish'
             }
         }
 
-        stage('Terraform Plan') {
+        stage('Deploy') {
             steps {
-                sh 'terraform plan -out=tfplan'
-            }
-        }
-
-        stage('Terraform Apply') {
-            steps {
-                sh 'terraform apply -auto-approve tfplan'
+                withCredentials([azureServicePrincipal(credentialsId: AZURE_CREDENTIALS_ID)]) {
+                    bat "az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID"
+                    bat "powershell Compress-Archive -Path ./publish/* -DestinationPath ./publish.zip -Force"
+                    bat "az webapp deploy --resource-group $RESOURCE_GROUP --name $APP_SERVICE_NAME --src-path ./publish.zip --type zip"
+                }
             }
         }
     }
 
     post {
         success {
-            echo "Terraform deployment successful!"
+            echo 'Deployment Successful!'
         }
         failure {
-            echo "Deployment failed!"
+            echo 'Deployment Failed!'
         }
     }
 }
+
