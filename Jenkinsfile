@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        AZURE_CREDENTIALS_ID = 'jenkins-pipeline-sp'
+        AZURE_CREDENTIALS_ID = 'jenkins-azure-sp'
         RESOURCE_GROUP = 'terraform-rg-dotnet'
         APP_SERVICE_NAME = 'terraform-asp-dotnet'
     }
