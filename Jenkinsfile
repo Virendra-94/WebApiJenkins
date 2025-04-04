@@ -2,8 +2,8 @@ pipeline {
     agent any
     environment {
         AZURE_CREDENTIALS_ID = 'jenkins-pipeline-sp'
-        RESOURCE_GROUP = 'my-rg-dotnet'
-        APP_SERVICE_NAME = 'my-asp-dotnet'
+        RESOURCE_GROUP = 'terraform-rg-dotnet'
+        APP_SERVICE_NAME = 'terraform-asp-dotnet'
     }
 
     stages {
